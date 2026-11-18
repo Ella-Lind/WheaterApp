@@ -2,6 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+<<<<<<< HEAD
+=======
     <mapping directory="$PROJECT_DIR$/WheaterApp" vcs="Git" />
+>>>>>>> f17d36cee09ad3f1b1fe266b9306a6073624d228
   </component>
 </project>

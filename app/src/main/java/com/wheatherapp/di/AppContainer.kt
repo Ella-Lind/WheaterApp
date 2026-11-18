@@ -1,5 +1,11 @@
 package com.wheatherapp.di
 
+import android.content.Context
+import com.wheatherapp.data.local.CachedForecastDao
+import com.wheatherapp.data.local.FavouriteLocationDao
+import com.wheatherapp.data.local.UserSettingsDao
+import com.wheatherapp.data.local.WeatherDatabase
+import com.wheatherapp.data.network.NetworkMonitor
 import com.wheatherapp.data.parser.ForecastJsonParser
 import com.wheatherapp.data.parser.GeocodingJsonParser
 import com.wheatherapp.data.remote.GeocodingApi
@@ -18,13 +24,18 @@ interface AppContainer {
     val geocodingApi: GeocodingApi
     val forecastJsonParser: ForecastJsonParser
     val geocodingJsonParser: GeocodingJsonParser
+    val database: WeatherDatabase
+    val cachedForecastDao: CachedForecastDao
+    val favouriteLocationDao: FavouriteLocationDao
+    val userSettingsDao: UserSettingsDao
+    val networkMonitor: NetworkMonitor
     val weatherRepository: WeatherRepository
 }
 
 /**
- * Single initialization point for Retrofit, OkHttpClient, APIs, Parsers, and manual DI dependency graph.
+ * Single initialization point for Retrofit, OkHttpClient, APIs, Parsers, Room Database, DAOs, and Repositories.
  */
-class DefaultAppContainer : AppContainer {
+class DefaultAppContainer(private val context: Context) : AppContainer {
 
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -36,10 +47,6 @@ class DefaultAppContainer : AppContainer {
             .build()
     }
 
-    /**
-     * Singleton Retrofit instance for forecast API, configured with ScalarsConverterFactory
-     * so Retrofit endpoints return raw JSON strings for our dedicated parser layer.
-     */
     override val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl("https://api.open-meteo.com/")
@@ -52,16 +59,8 @@ class DefaultAppContainer : AppContainer {
         retrofit.create(OpenMeteoApi::class.java)
     }
 
-    private val geocodingRetrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl("https://geocoding-api.open-meteo.com/")
-            .client(okHttpClient)
-            .addConverterFactory(ScalarsConverterFactory.create())
-            .build()
-    }
-
     override val geocodingApi: GeocodingApi by lazy {
-        geocodingRetrofit.create(GeocodingApi::class.java)
+        retrofit.create(GeocodingApi::class.java)
     }
 
     override val forecastJsonParser: ForecastJsonParser by lazy {
@@ -72,12 +71,36 @@ class DefaultAppContainer : AppContainer {
         GeocodingJsonParser()
     }
 
+    override val database: WeatherDatabase by lazy {
+        WeatherDatabase.getDatabase(context)
+    }
+
+    override val cachedForecastDao: CachedForecastDao by lazy {
+        database.cachedForecastDao()
+    }
+
+    override val favouriteLocationDao: FavouriteLocationDao by lazy {
+        database.favouriteLocationDao()
+    }
+
+    override val userSettingsDao: UserSettingsDao by lazy {
+        database.userSettingsDao()
+    }
+
+    override val networkMonitor: NetworkMonitor by lazy {
+        NetworkMonitor(context)
+    }
+
     override val weatherRepository: WeatherRepository by lazy {
         WeatherRepositoryImpl(
             openMeteoApi = openMeteoApi,
             geocodingApi = geocodingApi,
             forecastJsonParser = forecastJsonParser,
-            geocodingJsonParser = geocodingJsonParser
+            geocodingJsonParser = geocodingJsonParser,
+            cachedForecastDao = cachedForecastDao,
+            favouriteLocationDao = favouriteLocationDao,
+            userSettingsDao = userSettingsDao,
+            networkMonitor = networkMonitor
         )
     }
 }

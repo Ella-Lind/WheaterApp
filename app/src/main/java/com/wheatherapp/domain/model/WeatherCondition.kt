@@ -1,5 +1,8 @@
 package com.wheatherapp.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class WeatherCondition(
     val description: String,
     val wmoCodes: List<Int>

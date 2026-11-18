@@ -79,6 +79,11 @@ class FakeWeatherRepository : WeatherRepository {
         return Result.success(sampleForecast.copy(location = loc))
     }
 
+    override suspend fun getLatestCachedForecast(): Result<WeatherForecast> {
+        if (shouldReturnError) return Result.failure(RuntimeException(errorMessage))
+        return Result.success(sampleForecast.copy(isFromCache = true))
+    }
+
     override fun getFavouriteLocations(): Flow<List<LocationPlace>> = favouritesFlow.asStateFlow()
 
     override suspend fun addFavouriteLocation(location: LocationPlace): Result<Unit> {
@@ -88,8 +93,14 @@ class FakeWeatherRepository : WeatherRepository {
     }
 
     override suspend fun removeFavouriteLocation(location: LocationPlace): Result<Unit> {
+        return removeFavouriteLocation(location.latitude, location.longitude)
+    }
+
+    override suspend fun removeFavouriteLocation(latitude: Double, longitude: Double): Result<Unit> {
         if (shouldReturnError) return Result.failure(RuntimeException(errorMessage))
-        favouritesFlow.update { list -> list.filterNot { it.name == location.name } }
+        favouritesFlow.update { list ->
+            list.filterNot { it.latitude == latitude && it.longitude == longitude }
+        }
         return Result.success(Unit)
     }
 

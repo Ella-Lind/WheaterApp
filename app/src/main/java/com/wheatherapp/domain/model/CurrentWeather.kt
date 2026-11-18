@@ -1,5 +1,8 @@
 package com.wheatherapp.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class CurrentWeather(
     val temperatureCelsius: Double,
     val relativeHumidityPercent: Int,

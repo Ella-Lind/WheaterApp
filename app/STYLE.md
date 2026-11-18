@@ -7,10 +7,10 @@
 
 ## 1. Package & Directory Structure
 
-Organize code strictly by architectural responsibility under `com.example.weatherapp`:
+Organize code strictly by architectural responsibility under `com.wheatherapp`:
 
 ```text
-app/src/main/java/com/example/weatherapp/
+app/src/main/java/com/wheatherapp/
 ├── MainActivity.kt                  # Single-activity entry point, sets up Theme & NavHost
 ├── WeatherApplication.kt            # Holds AppContainer (manual DI singleton graph)
 ├── di/

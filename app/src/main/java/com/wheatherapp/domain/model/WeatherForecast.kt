@@ -1,5 +1,7 @@
 package com.wheatherapp.domain.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Domain aggregate holding the complete weather forecast for a location.
  *
@@ -10,6 +12,7 @@ package com.wheatherapp.domain.model
  * @param fetchedTimestampMillis Timestamp when the forecast was fetched/cached.
  * @param isFromCache Indicates if the data was loaded from Room offline storage.
  */
+@Serializable
 data class WeatherForecast(
     val location: LocationPlace,
     val current: CurrentWeather,

@@ -1,7 +1,9 @@
 package com.wheatherapp.domain.repository
 
 import com.wheatherapp.domain.model.LocationPlace
+import com.wheatherapp.domain.model.UserSettings
 import com.wheatherapp.domain.model.WeatherForecast
+import kotlinx.coroutines.flow.Flow
 
 interface WeatherRepository {
     /**
@@ -22,4 +24,35 @@ interface WeatherRepository {
         longitude: Double,
         placeName: String = "Selected Coordinates"
     ): Result<WeatherForecast>
+
+    /**
+     * Observes the list of user favourite locations.
+     */
+    fun getFavouriteLocations(): Flow<List<LocationPlace>>
+
+    /**
+     * Adds a location to the list of favourites.
+     */
+    suspend fun addFavouriteLocation(location: LocationPlace): Result<Unit>
+
+    /**
+     * Removes a location from the list of favourites.
+     */
+    suspend fun removeFavouriteLocation(location: LocationPlace): Result<Unit>
+
+    /**
+     * Checks if a location is marked as favourite.
+     */
+    suspend fun isLocationFavourite(latitude: Double, longitude: Double): Boolean
+
+    /**
+     * Observes current user settings (units, refresh interval, theme).
+     */
+    fun getUserSettings(): Flow<UserSettings>
+
+    /**
+     * Updates current user settings.
+     */
+    suspend fun updateUserSettings(settings: UserSettings): Result<Unit>
 }
+

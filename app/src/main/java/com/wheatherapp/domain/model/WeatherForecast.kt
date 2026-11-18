@@ -34,7 +34,9 @@ data class WeatherForecast(
      * Returns the detailed hourly prognosis for a specific date (Format: "YYYY-MM-DD").
      */
     fun getHourlyForDate(dateIso: String): List<HourlyWeather> {
-        return daily.find { it.dateIso == dateIso }?.hourlyForecast
-            ?: emptyList()
+        val dailyHourly = daily.find { it.dateIso == dateIso }?.hourlyForecast
+        if (!dailyHourly.isNullOrEmpty()) return dailyHourly
+        if (daily.firstOrNull()?.dateIso == dateIso) return todayHourly
+        return emptyList()
     }
 }

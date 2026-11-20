@@ -1,0 +1,5 @@
+While working on this project, we were surprised how fast and easy it is for the agent to understand and create a UI that matches our exact vision. We created 20 different UI screens, about 4 for home screen, 3 for settings screen etc. using Google Stitch, and we of course kept components we liked and discarded ones we didn't want to craft the perfect UI idea. And feeding that image to the agent with instructions about colour schemas and what files to create, it did a really good job recreating our idea.
+
+We were also pleased that the agent was able to keep to the constraints and requirements in the .md files, sometimes it felt like the agent would stray away from the path and start hallucinating but it seemed that it was easy for it to keep on track according to the .md files no matter what instruction we gave it.
+
+The things we would do differently next time is writing tests that have the purpose of catching the invalid inputs and test more edge cases. We found that there were some JSON parsing errors that weren't caught and coincidentally showed a good result on the application screen.

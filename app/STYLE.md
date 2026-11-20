@@ -1,8 +1,3 @@
----
-
-### `STYLE.md`
-
-```markdown
 # STYLE.md — Architecture, Naming & UI Conventions
 
 ## 1. Package & Directory Structure
@@ -36,7 +31,7 @@ app/src/main/java/com/wheatherapp/
 │   │       ├── FavouriteLocationEntity.kt
 │   │       └── UserSettingsEntity.kt
 │   ├── network/
-│   │   └── NetworkMonitor.kt        # Wraps ConnectivityManager into Flow<Boolean>
+│   │   └── NetworkMonitor.kt        # ConnectivityManager implementation of domain NetworkMonitor
 │   └── repository/
 │       └── WeatherRepositoryImpl.kt # Coordinates Retrofit, parsers, Room caching, and offline fallback
 ├── domain/
@@ -47,35 +42,33 @@ app/src/main/java/com/wheatherapp/
 │   │   ├── WeatherCondition.kt      # Enum mapping WMO codes -> label, icon, semantic color
 │   │   ├── LocationPlace.kt         # Clean location model (name, country, lat, lon, isFavourite)
 │   │   └── UserSettings.kt          # Domain model for refresh interval, units, and theme
+│   ├── network/
+│   │   └── NetworkMonitor.kt        # Network connectivity interface consumed by WeatherViewModel
 │   ├── repository/
-│   │   └── WeatherRepository.kt     # Repository interface consumed by ViewModels
+│   │   └── WeatherRepository.kt     # Repository interface consumed by WeatherViewModel
 │   └── util/
 │       ├── CoordinateValidator.kt   # Pure Kotlin validator for lat/lon floating-point strings
-│       └── UnitConverter.kt         # Pure Kotlin °C/°F and m/s/km/h conversion helpers
+│       └── WeatherFormatters.kt     # Pure Kotlin °C/°F, wind speed, date/time formatting helpers
 └── ui/
     ├── navigation/
-    │   └── WeatherNavGraph.kt       # Routes: Home, Detail/{dayIndex}, Favourites, Settings
+    │   └── WeatherNavGraph.kt       # Routes: Home, Detail/{dayIndex}, SavedLocations, Settings
     ├── theme/
     │   ├── Color.kt                 # Material 3 light/dark palette + weather condition accents
     │   ├── Type.kt                  # Clear typographic hierarchy (display temp, headers, body)
     │   └── Theme.kt                 # WeatherAppTheme composable
     ├── components/
-    │   ├── SearchHeaderBar.kt       # Toggleable City Search / Lat-Lon Input with validation feedback
-    │   ├── CurrentWeatherCard.kt    # Hero card with temperature, WMO icon, feels-like, wind
-    │   ├── HourlyForecastRow.kt     # Horizontal scrollable row for Today's hourly forecast
-    │   ├── DailyForecastItem.kt     # Row item for 7-day forecast list (clickable -> Detail)
-    │   ├── OfflineBanner.kt         # Non-intrusive warning banner when showing cached Room data
-    │   └── StatePlaceholders.kt     # Designed LoadingView, ErrorRetryView, EmptyStateView
+    │   ├── SearchOverlay.kt         # City Search / Lat-Lon input overlay with validation feedback
+    │   └── WeatherStateViews.kt     # Designed LoadingStateView, OfflineBanner, and Error states
     └── screens/
         ├── home/
-        │   ├── HomeScreen.kt        # Main scrollable forecast + search screen
-        │   ├── HomeViewModel.kt     # Manages HomeUiState via StateFlow
-        │   └── HomeUiState.kt       # Immutable UI state + user events
+        │   ├── HomeScreen.kt        # Main forecast orchestrator screen
+        │   ├── HomeComponents.kt    # Extracted hero card, hourly row, and 7-day forecast cards
+        │   ├── WeatherViewModel.kt  # Shared StateFlow ViewModel with forecastJob cancellation
+        │   └── WeatherUiState.kt    # Sealed UI states (Loading, Success, Offline, Error)
         ├── detail/
-        │   └── DayDetailScreen.kt   # Detailed single-day forecast view
+        │   ├── DayDetailScreen.kt   # Single-day forecast screen with dayIndex bounds check
+        │   └── DayDetailComponents.kt # BentoMetricGrid and HourlyMatrixSection composables
         ├── favourites/
-        │   ├── FavouritesScreen.kt  # Quick-access list of saved Room locations
-        │   └── FavouritesViewModel.kt
+        │   └── SavedLocationsScreen.kt # Quick-access list of saved Room locations
         └── settings/
-            ├── SettingsScreen.kt    # Refresh interval, unit toggles, theme selection
-            └── SettingsViewModel.kt
+            └── SettingsScreen.kt    # Refresh interval, unit toggles, and theme selection

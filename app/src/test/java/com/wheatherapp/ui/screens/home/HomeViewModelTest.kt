@@ -90,4 +90,27 @@ class HomeViewModelTest {
         viewModel.clearUserMessage()
         assertNull(viewModel.uiState.value.userMessage)
     }
+
+    @Test
+    fun onSearchSubmitted_failure_setsUserMessageAndResetsSearching() = runTest {
+        fakeRepository.shouldReturnError = true
+        fakeRepository.errorMessage = "Location search server unreachable"
+
+        viewModel.onSearchSubmitted("UnknownPlace")
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSearching)
+        assertEquals("Location search server unreachable", state.userMessage)
+    }
+
+    @Test
+    fun onToggleFavourite_failure_setsUserErrorMessage() = runTest {
+        fakeRepository.shouldReturnError = true
+        fakeRepository.errorMessage = "Failed to save favourite"
+
+        viewModel.onToggleFavourite()
+
+        val state = viewModel.uiState.value
+        assertEquals("Failed to save favourite", state.userMessage)
+    }
 }

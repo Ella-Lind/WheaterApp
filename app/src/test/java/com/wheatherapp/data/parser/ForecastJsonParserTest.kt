@@ -1,6 +1,7 @@
 package com.wheatherapp.data.parser
 
 import com.wheatherapp.domain.model.LocationPlace
+import com.wheatherapp.domain.model.WeatherCondition
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
@@ -8,6 +9,13 @@ import org.junit.Test
 class ForecastJsonParserTest {
 
     private val parser = ForecastJsonParser()
+
+    private val sampleLocation = LocationPlace(
+        name = "Stockholm",
+        country = "Sweden",
+        latitude = 59.3293,
+        longitude = 18.0686
+    )
 
     @Test
     fun parse_groupsHourlyByDate_andExposesTodayAndRemainingNext6Days() {
@@ -52,14 +60,7 @@ class ForecastJsonParserTest {
         }
         """.trimIndent()
 
-        val location = LocationPlace(
-            name = "Stockholm",
-            country = "Sweden",
-            latitude = 59.3293,
-            longitude = 18.0686
-        )
-
-        val forecast = parser.parse(sampleJson, location)
+        val forecast = parser.parse(sampleJson, sampleLocation)
 
         // Verify total daily count (7 days fetched)
         assertEquals(7, forecast.daily.size)
@@ -78,5 +79,51 @@ class ForecastJsonParserTest {
         assertNotNull(feb18)
         assertEquals(2, feb18?.hourlyForecast?.size)
         assertEquals("2025-02-18T00:00", feb18?.hourlyForecast?.get(0)?.timeIso)
+    }
+
+    @Test(expected = Exception::class)
+    fun parse_malformedJson_throwsException() {
+        val malformedJson = "{ invalid_forecast_json }"
+        parser.parse(malformedJson, sampleLocation)
+    }
+
+    @Test
+    fun parse_missingCurrentAndDaily_usesDefaultValues() {
+        val incompleteJson = """
+        {
+          "latitude": 59.3293,
+          "longitude": 18.0686
+          
+        }
+        """.trimIndent()
+
+        val forecast = parser.parse(incompleteJson, sampleLocation)
+
+        assertEquals(0.0, forecast.current.temperatureCelsius, 0.001)
+        assertEquals(WeatherCondition.UNKNOWN, forecast.current.weatherCondition)
+        assertEquals(0, forecast.daily.size)
+        assertEquals(0, forecast.todayHourly.size)
+    }
+
+    @Test
+    fun parse_unrecognizedWmoCode_mapsToUnknownCondition() {
+        val jsonWithInvalidWmo = """
+        {
+          "latitude": 59.3293,
+          "longitude": 18.0686,
+          "current": {
+            "temperature_2m": 15.0,
+            "relative_humidity_2m": 50,
+            "apparent_temperature": 15.0,
+            "precipitation": 0.0,
+            "weather_code": 999,
+            "wind_speed_10m": 10.0,
+            "wind_direction_10m": 90
+          }
+        }
+        """.trimIndent()
+
+        val forecast = parser.parse(jsonWithInvalidWmo, sampleLocation)
+        assertEquals(WeatherCondition.UNKNOWN, forecast.current.weatherCondition)
     }
 }

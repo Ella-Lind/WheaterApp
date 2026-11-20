@@ -66,4 +66,28 @@ class FavouritesViewModelTest {
         viewModel.clearUserMessage()
         assertNull(viewModel.uiState.value.userMessage)
     }
+
+    @Test
+    fun onAddFavourite_failure_showsUserErrorMessage() = runTest {
+        fakeRepository.shouldReturnError = true
+        fakeRepository.errorMessage = "Database write failed"
+
+        val place = LocationPlace("Oslo", "Norway", 59.9139, 10.7522)
+        viewModel.onAddFavourite(place)
+
+        val state = viewModel.uiState.value
+        assertEquals("Database write failed", state.userMessage)
+    }
+
+    @Test
+    fun onRemoveFavourite_failure_showsUserErrorMessage() = runTest {
+        fakeRepository.shouldReturnError = true
+        fakeRepository.errorMessage = "Database delete failed"
+
+        val place = LocationPlace("Oslo", "Norway", 59.9139, 10.7522)
+        viewModel.onRemoveFavourite(place)
+
+        val state = viewModel.uiState.value
+        assertEquals("Database delete failed", state.userMessage)
+    }
 }

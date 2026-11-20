@@ -65,4 +65,15 @@ class DayDetailViewModelTest {
         viewModel.clearError()
         assertNull(viewModel.uiState.value.errorMessage)
     }
+
+    @Test
+    fun loadFromForecast_unknownDate_fallsBackToTodayDaily() = runTest {
+        viewModel.loadFromForecast(fakeRepository.sampleForecast, "2099-12-31")
+
+        val state = viewModel.uiState.value
+        assertEquals("Stockholm", state.location?.name)
+        assertEquals("2099-12-31", state.selectedDateIso)
+        assertNotNull(state.dailyWeather)
+        assertEquals("2025-02-17", state.dailyWeather?.dateIso)
+    }
 }

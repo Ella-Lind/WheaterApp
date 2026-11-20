@@ -311,4 +311,81 @@ class WeatherRepositoryTest {
         )
         fakeCachedForecastDao.cacheWriteFailure = null
     }
+
+    @Test
+    fun searchLocations_blankQuery_returnsEmptySuccessList() = runTest(testDispatcher) {
+        val repository = createRepository(isOnline = true)
+        val result = repository.searchLocations("   ")
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrThrow().isEmpty())
+    }
+
+    @Test
+    fun searchLocations_validCoordinatesQuery_returnsCoordinatesLocation() = runTest(testDispatcher) {
+        val repository = createRepository(isOnline = true)
+        val result = repository.searchLocations("59.3293, 18.0686")
+        assertTrue(result.isSuccess)
+        val places = result.getOrThrow()
+        assertEquals(1, places.size)
+        assertEquals(59.3293, places[0].latitude, 0.0001)
+        assertEquals(18.0686, places[0].longitude, 0.0001)
+    }
+
+    @Test
+    fun searchLocations_httpError_returnsFailureWithHttpDetails() = runTest(testDispatcher) {
+        val httpGeocodingApi = object : GeocodingApi {
+            override suspend fun searchLocation(
+                url: String,
+                name: String,
+                count: Int,
+                language: String,
+                format: String
+            ): String {
+                throw HttpException(
+                    Response.error<String>(
+                        500,
+                        "Internal Server Error".toResponseBody("text/plain".toMediaType())
+                    )
+                )
+            }
+        }
+        val repository = createRepository(isOnline = true, geocodingApi = httpGeocodingApi)
+        fakeCachedForecastDao.items.clear()
+        val result = repository.searchLocations("Stockholm")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("HTTP error 500") == true)
+    }
+
+    @Test
+    fun addFavouriteLocation_daoError_returnsFailureResult() = runTest(testDispatcher) {
+        val failingFavDao = object : FavouriteLocationDao {
+            override fun getFavouriteLocations(): Flow<List<FavouriteLocationEntity>> = flowOf(emptyList())
+            override suspend fun insertFavourite(favourite: FavouriteLocationEntity) {
+                throw IOException("DB disk full")
+            }
+            override suspend fun removeFavourite(latitude: Double, longitude: Double) {}
+            override suspend fun isFavourite(latitude: Double, longitude: Double): Int = 0
+        }
+
+        val repository = WeatherRepositoryImpl(
+            openMeteoApi = object : OpenMeteoApi {
+                override suspend fun getForecast(latitude: Double, longitude: Double, current: String, hourly: String, daily: String, timezone: String, forecastDays: Int) = forecastJson()
+            },
+            geocodingApi = object : GeocodingApi {
+                override suspend fun searchLocation(url: String, name: String, count: Int, language: String, format: String) = ""
+            },
+            forecastJsonParser = ForecastJsonParser(),
+            geocodingJsonParser = GeocodingJsonParser(),
+            cachedForecastDao = fakeCachedForecastDao,
+            favouriteLocationDao = failingFavDao,
+            userSettingsDao = fakeUserSettingsDao,
+            networkMonitor = NetworkMonitor(testOnline = true),
+            ioDispatcher = testDispatcher
+        )
+
+        val result = repository.addFavouriteLocation(stockholm)
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("DB disk full") == true)
+    }
 }

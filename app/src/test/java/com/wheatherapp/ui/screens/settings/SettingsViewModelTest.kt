@@ -65,4 +65,15 @@ class SettingsViewModelTest {
         viewModel.clearUserMessage()
         assertNull(viewModel.uiState.value.userMessage)
     }
+
+    @Test
+    fun saveSettings_failure_showsUserErrorMessage() = runTest {
+        fakeRepository.shouldReturnError = true
+        fakeRepository.errorMessage = "Failed to write user settings"
+
+        viewModel.onTemperatureUnitChanged(TemperatureUnit.FAHRENHEIT)
+
+        val state = viewModel.uiState.value
+        assertEquals("Failed to write user settings", state.userMessage)
+    }
 }

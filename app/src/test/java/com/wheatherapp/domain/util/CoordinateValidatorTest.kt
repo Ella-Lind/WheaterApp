@@ -38,4 +38,28 @@ class CoordinateValidatorTest {
         val result = CoordinateValidator.parseCoordinates("Stockholm")
         assertNull(result)
     }
+
+    @Test
+    fun parseCoordinates_outOfBoundsLatitude_returnsNull() {
+        val result = CoordinateValidator.parseCoordinates("95.0, 18.0686")
+        assertNull(result)
+    }
+
+    @Test
+    fun parseCoordinates_outOfBoundsLongitude_returnsNull() {
+        val result = CoordinateValidator.parseCoordinates("59.3293, 200.0")
+        assertNull(result)
+    }
+
+    @Test
+    fun parseCoordinates_invalidNumberFormat_returnsNull() {
+        val result = CoordinateValidator.parseCoordinates("abc, xyz")
+        assertNull(result)
+    }
+
+    @Test
+    fun parseCoordinates_tooManyCommaSeparatedValues_returnsNull() {
+        val result = CoordinateValidator.parseCoordinates("59.3293, 18.0686, 100.0")
+        assertNull(result)
+    }
 }

@@ -50,15 +50,30 @@ class WeatherViewModelTest {
 
         override fun getFavouriteLocations(): Flow<List<LocationPlace>> = flowOf(favouriteList)
 
-        override suspend fun addFavouriteLocation(location: LocationPlace) { favouriteList.add(location.copy(isFavourite = true)) }
+        override suspend fun addFavouriteLocation(location: LocationPlace): Result<Unit> {
+            favouriteList.add(location.copy(isFavourite = true))
+            return Result.success(Unit)
+        }
 
-        override suspend fun removeFavouriteLocation(latitude: Double, longitude: Double) { favouriteList.removeIf { it.latitude == latitude && it.longitude == longitude } }
+        override suspend fun removeFavouriteLocation(location: LocationPlace): Result<Unit> {
+            favouriteList.removeIf { it.name == location.name }
+            return Result.success(Unit)
+        }
 
-        override suspend fun isFavouriteLocation(latitude: Double, longitude: Double): Boolean = favouriteList.any { it.latitude == latitude && it.longitude == longitude }
+        override suspend fun removeFavouriteLocation(latitude: Double, longitude: Double): Result<Unit> {
+            favouriteList.removeIf { it.latitude == latitude && it.longitude == longitude }
+            return Result.success(Unit)
+        }
+
+        override suspend fun isLocationFavourite(latitude: Double, longitude: Double): Boolean =
+            favouriteList.any { it.latitude == latitude && it.longitude == longitude }
 
         override fun getUserSettings(): Flow<UserSettings> = settingsFlow
 
-        override suspend fun updateUserSettings(settings: UserSettings) { settingsFlow.value = settings }
+        override suspend fun updateUserSettings(settings: UserSettings): Result<Unit> {
+            settingsFlow.value = settings
+            return Result.success(Unit)
+        }
     }
 
     private val fakeRepo = FakeWeatherRepository()

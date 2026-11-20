@@ -59,3 +59,5 @@ We made sure that we didn't blindly accept the fixes but also understood what it
 We also expanded the unit tests around error handling and verified that the gradle debug test passed. We directed the AI to run mutation tests on the code on our core components to make sure our tests were valid and caught any errors that occurred. We also manually verified the key mutations by temporarily breaking the logic and making sure the tests failed like they should.
 
 We ourselves did the 20 different UX test scenarios and made sure everything passed like it should.
+
+A mishap we found towards the end of the session was that a lot of dead code had accumulated in most of our ViewModel files and WeatherViewModel had become a monolith. We’re not entirely sure whether this was caused by a merge where old code came back from a different branch or if we didn’t review the agent's output properly. In the future we will be more aware of similar issues.

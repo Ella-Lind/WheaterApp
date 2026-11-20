@@ -1,33 +1,22 @@
 package com.wheatherapp.ui.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -40,12 +29,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.wheatherapp.WeatherApplication
-import com.wheatherapp.data.network.NetworkMonitor
 import com.wheatherapp.ui.screens.detail.DayDetailScreen
+import com.wheatherapp.ui.screens.detail.DayDetailViewModel
+import com.wheatherapp.ui.screens.favourites.FavouritesViewModel
 import com.wheatherapp.ui.screens.favourites.SavedLocationsScreen
+import com.wheatherapp.ui.screens.home.ForecastUiState
 import com.wheatherapp.ui.screens.home.HomeScreen
-import com.wheatherapp.ui.screens.home.WeatherViewModel
+import com.wheatherapp.ui.screens.home.HomeViewModel
 import com.wheatherapp.ui.screens.settings.SettingsScreen
+import com.wheatherapp.ui.screens.settings.SettingsViewModel
+import com.wheatherapp.ui.util.ViewModelFactory
 
 /**
  * Bottom navigation bar tab destinations.
@@ -75,28 +68,22 @@ object DetailDestination {
 }
 
 /**
- * Central NavGraph managing navigation between Weather, Detail, Saved, and Settings views.
+ * Central NavGraph managing navigation between Weather, Detail, Saved, and Settings views using dedicated ViewModels.
  */
 @Composable
 fun WeatherNavGraph(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
-    weatherViewModel: WeatherViewModel = run {
-        val context = LocalContext.current
-        val appContainer = (context.applicationContext as WeatherApplication).container
-        viewModel(
-            factory = object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return WeatherViewModel(
-                        weatherRepository = appContainer.weatherRepository,
-                        networkMonitor = NetworkMonitor(context)
-                    ) as T
-                }
-            }
-        )
-    }
+    navController: NavHostController = rememberNavController()
 ) {
+    val context = LocalContext.current
+    val appContainer = (context.applicationContext as WeatherApplication).container
+    val viewModelFactory = ViewModelFactory(appContainer)
+
+    val homeViewModel: HomeViewModel = viewModel(factory = viewModelFactory)
+    val favouritesViewModel: FavouritesViewModel = viewModel(factory = viewModelFactory)
+    val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
+    val dayDetailViewModel: DayDetailViewModel = viewModel(factory = viewModelFactory)
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
@@ -137,29 +124,21 @@ fun WeatherNavGraph(
         ) {
             // 1. Weather (Main / Home screen)
             composable(Screen.Weather.route) {
-                val uiState by weatherViewModel.uiState.collectAsStateWithLifecycle()
-                val userSettings by weatherViewModel.userSettings.collectAsStateWithLifecycle()
-                val searchQuery by weatherViewModel.searchQuery.collectAsStateWithLifecycle()
-                val searchResults by weatherViewModel.searchResults.collectAsStateWithLifecycle()
-                val favouriteLocations by weatherViewModel.favouriteLocations.collectAsStateWithLifecycle()
+                val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
 
                 HomeScreen(
-                    uiState = uiState,
-                    userSettings = userSettings,
-                    searchQuery = searchQuery,
-                    searchResults = searchResults,
-                    favouriteLocations = favouriteLocations,
-                    onSearchQueryChange = { query -> weatherViewModel.onSearchQueryChange(query) },
-                    onSearchSubmitted = { query -> weatherViewModel.onSearchSubmitted(query) },
-                    onLocationSelect = { location -> weatherViewModel.selectLocation(location) },
+                    uiState = homeUiState,
+                    onSearchQueryChange = { query -> homeViewModel.onSearchQueryChanged(query) },
+                    onSearchSubmitted = { query -> homeViewModel.onSearchSubmitted(query) },
+                    onLocationSelect = { location -> homeViewModel.onSelectLocation(location) },
                     onDayClick = { dayIndex ->
                         navController.navigate(DetailDestination.createRoute(dayIndex))
                     },
                     onToggleFavourite = { location ->
-                        weatherViewModel.toggleFavourite(location)
+                        homeViewModel.onToggleFavourite(location)
                     },
                     onRetry = {
-                        weatherViewModel.refreshForecast()
+                        homeViewModel.onRefresh()
                     }
                 )
             }
@@ -172,13 +151,20 @@ fun WeatherNavGraph(
                 )
             ) { backStackEntry ->
                 val dayIndex = backStackEntry.arguments?.getInt(DetailDestination.argDayIndex) ?: 0
-                val uiState by weatherViewModel.uiState.collectAsStateWithLifecycle()
-                val userSettings by weatherViewModel.userSettings.collectAsStateWithLifecycle()
+                val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                val detailUiState by dayDetailViewModel.uiState.collectAsStateWithLifecycle()
+
+                LaunchedEffect(dayIndex, homeUiState.forecastState) {
+                    val forecastState = homeUiState.forecastState
+                    if (forecastState is ForecastUiState.Success) {
+                        val dateIso = forecastState.forecast.daily.getOrNull(dayIndex)?.dateIso ?: ""
+                        dayDetailViewModel.loadFromForecast(forecastState.forecast, dateIso)
+                    }
+                }
 
                 DayDetailScreen(
                     dayIndex = dayIndex,
-                    uiState = uiState,
-                    userSettings = userSettings,
+                    uiState = detailUiState,
                     onNavigateBack = {
                         navController.popBackStack()
                     }
@@ -187,14 +173,13 @@ fun WeatherNavGraph(
 
             // 3. Saved Locations screen
             composable(Screen.Saved.route) {
-                val favouriteLocations by weatherViewModel.favouriteLocations.collectAsStateWithLifecycle()
-                val userSettings by weatherViewModel.userSettings.collectAsStateWithLifecycle()
+                val favouritesUiState by favouritesViewModel.uiState.collectAsStateWithLifecycle()
 
                 SavedLocationsScreen(
-                    favouriteLocations = favouriteLocations,
-                    userSettings = userSettings,
+                    uiState = favouritesUiState,
+                    onFilterQueryChanged = { query -> favouritesViewModel.onFilterQueryChanged(query) },
                     onSelectLocation = { location ->
-                        weatherViewModel.selectLocation(location)
+                        homeViewModel.onSelectLocation(location)
                         navController.navigate(Screen.Weather.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
@@ -204,20 +189,21 @@ fun WeatherNavGraph(
                         }
                     },
                     onRemoveFavourite = { location ->
-                        weatherViewModel.toggleFavourite(location)
+                        favouritesViewModel.onRemoveFavourite(location)
                     }
                 )
             }
 
             // 4. Settings screen
             composable(Screen.Settings.route) {
-                val userSettings by weatherViewModel.userSettings.collectAsStateWithLifecycle()
+                val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
                 SettingsScreen(
-                    userSettings = userSettings,
-                    onUpdateSettings = { newSettings ->
-                        weatherViewModel.updateUserSettings(newSettings)
-                    }
+                    uiState = settingsUiState,
+                    onTemperatureUnitChanged = { unit -> settingsViewModel.onTemperatureUnitChanged(unit) },
+                    onSpeedUnitChanged = { unit -> settingsViewModel.onSpeedUnitChanged(unit) },
+                    onRefreshIntervalChanged = { minutes -> settingsViewModel.onRefreshIntervalChanged(minutes) },
+                    onThemeModeChanged = { mode -> settingsViewModel.onThemeModeChanged(mode) }
                 )
             }
         }

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.WbSunny
@@ -36,22 +35,18 @@ import androidx.compose.ui.unit.dp
 import com.wheatherapp.domain.model.SpeedUnit
 import com.wheatherapp.domain.model.TemperatureUnit
 import com.wheatherapp.domain.model.ThemeMode
-import com.wheatherapp.domain.model.UserSettings
 
-/**
- * SettingsScreen matching the top-right Stitch mockup:
- * Grouped cards with segmented pill selectors for:
- * - Measurement Units (Temperature: °C / °F, Wind Velocity: km/h / m/s / mph)
- * - Appearance & Atmosphere (Interface Tone: System / Light / Dark)
- * - Data & Telemetry Sync (Auto-Refresh Interval: 15 min / 30 min / 1 hr)
- */
 @Composable
 fun SettingsScreen(
-    userSettings: UserSettings,
-    onUpdateSettings: (UserSettings) -> Unit,
+    uiState: SettingsUiState,
+    onTemperatureUnitChanged: (TemperatureUnit) -> Unit,
+    onSpeedUnitChanged: (SpeedUnit) -> Unit,
+    onRefreshIntervalChanged: (Int) -> Unit,
+    onThemeModeChanged: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    val userSettings = uiState.settings
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -82,7 +77,6 @@ fun SettingsScreen(
                 title = "Measurement Units",
                 icon = Icons.Default.Thermostat
             ) {
-                // Temperature Selector
                 Text(
                     text = "Temperature",
                     style = MaterialTheme.typography.labelMedium,
@@ -95,14 +89,11 @@ fun SettingsScreen(
                         TemperatureUnit.FAHRENHEIT to "°F"
                     ),
                     selectedOption = userSettings.temperatureUnit,
-                    onOptionSelected = { unit ->
-                        onUpdateSettings(userSettings.copy(temperatureUnit = unit))
-                    }
+                    onOptionSelected = onTemperatureUnitChanged
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Wind Velocity Selector
                 Text(
                     text = "Wind Velocity",
                     style = MaterialTheme.typography.labelMedium,
@@ -116,9 +107,7 @@ fun SettingsScreen(
                         SpeedUnit.MPH to "mph"
                     ),
                     selectedOption = userSettings.speedUnit,
-                    onOptionSelected = { speed ->
-                        onUpdateSettings(userSettings.copy(speedUnit = speed))
-                    }
+                    onOptionSelected = onSpeedUnitChanged
                 )
             }
 
@@ -147,9 +136,7 @@ fun SettingsScreen(
                         Icons.Default.NightsStay
                     ),
                     selectedOption = userSettings.themeMode,
-                    onOptionSelected = { theme ->
-                        onUpdateSettings(userSettings.copy(themeMode = theme))
-                    }
+                    onOptionSelected = onThemeModeChanged
                 )
             }
 
@@ -173,9 +160,7 @@ fun SettingsScreen(
                         60 to "1 hr"
                     ),
                     selectedOption = userSettings.refreshIntervalMinutes,
-                    onOptionSelected = { interval ->
-                        onUpdateSettings(userSettings.copy(refreshIntervalMinutes = interval))
-                    }
+                    onOptionSelected = onRefreshIntervalChanged
                 )
             }
         }

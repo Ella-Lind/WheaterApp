@@ -21,6 +21,7 @@ data class HomeUiState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchResults: List<LocationPlace> = emptyList(),
+    val favouriteLocations: List<LocationPlace> = emptyList(),
     val selectedLocation: LocationPlace? = DEFAULT_LOCATION,
     val forecastState: ForecastUiState = ForecastUiState.Idle,
     val isRefreshing: Boolean = false,

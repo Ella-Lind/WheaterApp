@@ -31,10 +31,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,31 +38,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.wheatherapp.domain.model.LocationPlace
-import com.wheatherapp.domain.model.UserSettings
 import com.wheatherapp.domain.util.WeatherFormatters
 
-/**
- * SavedLocationsScreen matching the top-third Stitch mockup:
- * Displays filter search input and scrollable list of saved favourite stations/cities.
- * Tapping a city calls [onSelectLocation] to load its forecast and switch to the Weather tab.
- */
 @Composable
 fun SavedLocationsScreen(
-    favouriteLocations: List<LocationPlace>,
-    userSettings: UserSettings,
+    uiState: FavouritesUiState,
+    onFilterQueryChanged: (String) -> Unit,
     onSelectLocation: (LocationPlace) -> Unit,
     onRemoveFavourite: (LocationPlace) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var filterQuery by rememberSaveable { mutableStateOf("") }
-
-    val filteredList = favouriteLocations.filter { place ->
-        val query = filterQuery.trim()
-        query.isEmpty() ||
-                place.name.contains(query, ignoreCase = true) ||
-                (place.country?.contains(query, ignoreCase = true) == true)
-    }
-
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -83,7 +64,7 @@ fun SavedLocationsScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "${favouriteLocations.size} Saved Stations",
+                text = "${uiState.favouriteLocations.size} Saved Stations",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -92,8 +73,8 @@ fun SavedLocationsScreen(
 
             // Filter Search Field
             OutlinedTextField(
-                value = filterQuery,
-                onValueChange = { filterQuery = it },
+                value = uiState.filterQuery,
+                onValueChange = onFilterQueryChanged,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Filter by city name or coordinate...") },
                 leadingIcon = {
@@ -104,8 +85,8 @@ fun SavedLocationsScreen(
                     )
                 },
                 trailingIcon = {
-                    if (filterQuery.isNotEmpty()) {
-                        IconButton(onClick = { filterQuery = "" }) {
+                    if (uiState.filterQuery.isNotEmpty()) {
+                        IconButton(onClick = { onFilterQueryChanged("") }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear filter",
@@ -124,7 +105,7 @@ fun SavedLocationsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (filteredList.isEmpty()) {
+            if (uiState.filteredLocations.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -143,13 +124,13 @@ fun SavedLocationsScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = if (filterQuery.isBlank()) "No Saved Stations Yet" else "No Matching Locations",
+                            text = if (uiState.filterQuery.isBlank()) "No Saved Stations Yet" else "No Matching Locations",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (filterQuery.isBlank()) "Star a city on the weather screen to save it here for quick access." else "Try adjusting your search filter.",
+                            text = if (uiState.filterQuery.isBlank()) "Star a city on the weather screen to save it here for quick access." else "Try adjusting your search filter.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -167,7 +148,7 @@ fun SavedLocationsScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        items(filteredList) { location ->
+                        items(uiState.filteredLocations) { location ->
                             SavedLocationItem(
                                 location = location,
                                 onSelect = { onSelectLocation(location) },

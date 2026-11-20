@@ -49,6 +49,7 @@ class HomeViewModel(
 
                 _uiState.update { state ->
                     state.copy(
+                        favouriteLocations = favList,
                         isFavourite = isFav,
                         selectedLocation = currentSelected?.copy(isFavourite = isFav)
                     )
@@ -59,8 +60,11 @@ class HomeViewModel(
 
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        if (query.isBlank()) {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) {
             _uiState.update { it.copy(searchResults = emptyList(), isSearching = false) }
+        } else {
+            onSearchSubmitted(trimmed)
         }
     }
 
@@ -141,18 +145,27 @@ class HomeViewModel(
         loadForecastForLocation(currentLoc, isRefresh = true)
     }
 
-    fun onToggleFavourite() {
-        val currentLoc = _uiState.value.selectedLocation ?: return
-        val currentlyFav = _uiState.value.isFavourite
+    fun onToggleFavourite(targetLocation: LocationPlace? = null) {
+        val loc = targetLocation ?: _uiState.value.selectedLocation ?: return
+        val currentlyFav = if (targetLocation != null) {
+            _uiState.value.favouriteLocations.any {
+                Math.abs(it.latitude - loc.latitude) < 0.0001 &&
+                        Math.abs(it.longitude - loc.longitude) < 0.0001
+            }
+        } else {
+            _uiState.value.isFavourite
+        }
 
         viewModelScope.launch {
             if (currentlyFav) {
-                weatherRepository.removeFavouriteLocation(currentLoc)
+                weatherRepository.removeFavouriteLocation(loc)
                     .onSuccess {
                         _uiState.update {
+                            val newIsFav = if (it.selectedLocation?.latitude == loc.latitude &&
+                                it.selectedLocation.longitude == loc.longitude) false else it.isFavourite
                             it.copy(
-                                isFavourite = false,
-                                userMessage = "Removed ${currentLoc.name} from favourites"
+                                isFavourite = newIsFav,
+                                userMessage = "Removed ${loc.name} from favourites"
                             )
                         }
                     }
@@ -162,12 +175,14 @@ class HomeViewModel(
                         }
                     }
             } else {
-                weatherRepository.addFavouriteLocation(currentLoc)
+                weatherRepository.addFavouriteLocation(loc)
                     .onSuccess {
                         _uiState.update {
+                            val newIsFav = if (it.selectedLocation?.latitude == loc.latitude &&
+                                it.selectedLocation.longitude == loc.longitude) true else it.isFavourite
                             it.copy(
-                                isFavourite = true,
-                                userMessage = "Added ${currentLoc.name} to favourites"
+                                isFavourite = newIsFav,
+                                userMessage = "Added ${loc.name} to favourites"
                             )
                         }
                     }

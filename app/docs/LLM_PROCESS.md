@@ -1,3 +1,7 @@
+Who Wrote What
+AI (Gemini & Copilot):** Generated initial Gradle setup, Retrofit/Room boilerplate, JSON parsers, Compose screen layouts, and initial unit/mutation test scaffolding under our SPEC.md and STYLE.md constraints.
+Team (Human):Designed the UI layouts with Google Stitch, directed the Clean MVVM architecture, reviewed and refactored generated code, resolved merge and build errors, manually verified mutations and 20 emulator UX scenarios, and wrote docs/REFLECTION.md and docs/LLM_PROCESS.md.
+
 The LLMs we used were primarily Gemini as an agent in the Android Studio IDE. We also utilized some Copilot because our tokens ran out and GitHub provided it for free for students.
 
 The work was split into primarily three sessions.

@@ -3,9 +3,18 @@
 ## Mutation Testing Executive Summary
 
 * **Testing Scope:** Unit Tests & Mutation Testing across Core Domain, Data Parsers, Repository Layer, and UI ViewModels.
-* **Total Mutants Introduced:** **20 Mutants**
-* **Total Mutants Killed:** **20 Mutants**
+* **Total Mutants Introduced:** **12 Mutants**
+* **Total Mutants Killed:** **12 Mutants**
 * **Overall Mutation Score:** **100.0%**
+
+## 1. Unit Test Suite Results (`./gradlew testDebugUnitTest`)
+
+| Component | Test Suite | Requirement | Result |
+| :--- | :--- | :--- | :--- |
+| JSON Parsing | `ForecastJsonParserTest`, `GeocodingJsonParserTest` | `W-03`, `W-11` | **PASS** |
+| Input Validation & Formatting | `CoordinateValidatorTest`, `UnitConverterTest` / `WeatherFormattersTest` | `W-02`, `W-09` | **PASS** |
+| Repository & Offline Cache | `WeatherRepositoryTest` | `W-01`, `W-04`, `W-11` | **PASS** |
+| State Management & Race Conditions | `WeatherViewModelTest` (and screen ViewModel tests) | `W-05`, `W-11`, `W-12` | **PASS** |
 
 ---
 
@@ -94,7 +103,7 @@
 * **Action Taken:** Enter `"XyzInvalidCity123"` in the search field and submit the search.
 * **Expected Result:** The app does not crash and displays a clear message indicating that the location could not be found.
 
-#### UX-07: Search with Empty Input — `[???]`
+#### UX-07: Search with Empty Input — `[PASS]`
 * **Starting State:** User is on the search/home screen with an empty search input field.
 * **Action Taken:** Tap the search button without entering any text.
 * **Expected Result:** No API request is sent, the app does not crash, and the user is prompted to enter a city name or coordinates.
@@ -109,7 +118,7 @@
 * **Action Taken:** Enter non-numeric characters (e.g., `59.32abc, 18.0686`) or invalid coordinate formats and attempt to submit.
 * **Expected Result:** No API request is sent, the app does not crash, and the user is prompted to enter a city name or coordinates.
 
-#### UX-10: Rapid Consecutive Searches (Race Condition) — `[PASS?]`
+#### UX-10: Rapid Consecutive Searches (Race Condition) — `[PASS]`
 * **Starting State:** User is on the search screen (ideally with simulated slow network latency).
 * **Action Taken:** Search for `"Gothenburg"` and immediately (within 0.5 seconds) search for `"Malmö"`.
 * **Expected Result:** The first request is cancelled or ignored, and only the forecast for `"Malmö"` is ultimately displayed.

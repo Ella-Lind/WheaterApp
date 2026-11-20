@@ -65,7 +65,7 @@
 * **Action Taken:** Launch the app and wait for the home screen to load.
 * **Expected Result:** A brief loading indicator appears, followed by the default location's current weather and 7-day forecast.
 
-#### UX-02: First Launch Offline (Empty Cache) — `[PASS / FAIL]`
+#### UX-02: First Launch Offline (Empty Cache) — `[PASS]`
 * **Starting State:** Fresh install (empty cache), airplane mode enabled (no internet connection).
 * **Action Taken:** Launch the app.
 * **Expected Result:** The app does not crash; a clear error message is displayed stating that no network connection is available.
